@@ -8,6 +8,7 @@ from src.models.user import User
 
 def get_users():
     """Returns all users"""
+    print("hola")
     users: list[User] = User.get_all()
 
     return [user.to_dict() for user in users]

@@ -11,33 +11,60 @@
     - delete
     - reload (which can be empty)
 """
-
 from src.models.base import Base
+from src.models import db
 from src.persistence.repository import Repository
+from sqlalchemy.exc import SQLAlchemyError
 
 
 class DBRepository(Repository):
     """Dummy DB repository"""
 
     def __init__(self) -> None:
-        """Not implemented"""
+        self.__session = None
+        self.reload()
 
     def get_all(self, model_name: str) -> list:
-        """Not implemented"""
-        return []
+        try:
+            return self.__session.query(model_name).all()
+        except SQLAlchemyError:
+            self.__session.rollback()
+            return []
 
     def get(self, model_name: str, obj_id: str) -> Base | None:
-        """Not implemented"""
+        try:
+            return self.__session.query(model_name).get(obj_id)
+        except SQLAlchemyError:
+            self.__session.rollback()
+            return None
 
     def reload(self) -> None:
-        """Not implemented"""
-
+        from utils.populate import populate_db
+        self.__session = db.session
+        populate_db(self)
+        db.create_all()
+        
     def save(self, obj: Base) -> None:
-        """Not implemented"""
+        try:
+            self.__session.add(obj)
+            self.__session.commit()
+        except SQLAlchemyError:
+            self.__session.rollback()
 
-    def update(self, obj: Base) -> Base | None:
-        """Not implemented"""
+    def update(self, obj: Base) -> None:
+        try:
+            self.__session.commit()
+        except SQLAlchemyError:
+            self.__session.rollback()
 
     def delete(self, obj: Base) -> bool:
-        """Not implemented"""
-        return False
+        try:
+            self.__session.delete(obj)
+            self.__session.commit()
+            return True
+        except SQLAlchemyError:
+            self.__session.rollback()
+            return False
+
+    def get_by_code(self, country, code):
+        return self.__session.query(country).filter_by(code=code).first()

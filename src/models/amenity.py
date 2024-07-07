@@ -1,14 +1,16 @@
 """
 Amenity related functionality
 """
-
 from src.models.base import Base
+from . import db
 
 
-class Amenity(Base):
+class Amenity(db.Model):
     """Amenity representation"""
+    __tablename__ = 'amenities'
 
-    name: str
+    name = db.Column(db.String(40), unique=True, nullable=False)
+    places = db.relationship("PlaceAmenity", back_populates='amenity')
 
     def __init__(self, name: str, **kw) -> None:
         """Dummy init"""
@@ -58,12 +60,16 @@ class Amenity(Base):
         return amenity
 
 
-class PlaceAmenity(Base):
+class PlaceAmenity(db.Model):
     """PlaceAmenity representation"""
 
-    place_id: str
-    amenity_id: str
+    __tablename__ = 'place_amenities'
 
+    place_id = db.Column(db.String(40), db.ForeignKey('places.id'), primary_key=True)
+    amenity_id = db.Column(db.String(20), db.ForeignKey('amenities.id'), primary_key=True)
+    place = db.relationship('Place', back_populates='amenities')
+    amenity = db.relationship('Amenity', back_populates='places')
+    
     def __init__(self, place_id: str, amenity_id: str, **kw) -> None:
         """Dummy init"""
         super().__init__(**kw)
